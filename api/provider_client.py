@@ -8,7 +8,7 @@ PROVIDER_API_TOKEN = os.getenv("PROVIDER_API_TOKEN")
 
 
 class EventsProviderClient:
-    async def events(
+    async def get_events(
             self,
             date_from: str,
     ):

@@ -8,7 +8,7 @@ from api.utils import _parse_dt
 from database import SessionLocal
 
 SYNC_SOURCE = "events_provider"
-FIRST_SYNC_CHANGED_AT = "2000-01-01T00:00:00+00:00"
+FIRST_SYNC_CHANGED_AT = "2000-01-01"
 
 
 async def _run_sync(db: AsyncSession) -> dict:
@@ -27,7 +27,7 @@ async def _run_sync(db: AsyncSession) -> dict:
         }
 
     date_from = (
-        sync_state.last_changed_at.isoformat()
+        sync_state.last_changed_at.date().isoformat()
         if sync_state.last_changed_at is not None
         else FIRST_SYNC_CHANGED_AT
     )

@@ -18,7 +18,7 @@ async def health_check():
     return {'status': 'ok'}
 
 
-@router.get("/sync/trigger")
+@router.post("/sync/trigger")
 async def sync_events(
         db: AsyncSession = Depends(get_db)
 ):

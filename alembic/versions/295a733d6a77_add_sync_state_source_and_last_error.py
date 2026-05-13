@@ -1,18 +1,19 @@
 """add sync_state source and last_error
 
 Revision ID: 295a733d6a77
-Revises: 
+Revises:
 Create Date: 2026-05-12 16:07:59.329416
 
 """
+
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = '295a733d6a77'
+revision: str = "295a733d6a77"
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -37,9 +38,16 @@ def upgrade() -> None:
         sa.Column("source", sa.String(length=100), nullable=False),
         sa.Column("last_sync_time", sa.DateTime(timezone=True), nullable=True),
         sa.Column("last_changed_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("sync_status", sa.String(length=20), nullable=False, server_default="idle"),
+        sa.Column(
+            "sync_status", sa.String(length=20), nullable=False, server_default="idle"
+        ),
         sa.Column("last_error", sa.String(length=500), nullable=True),
-        sa.Column("changed_at", sa.DateTime(timezone=True), nullable=True, server_default=sa.text("now()")),
+        sa.Column(
+            "changed_at",
+            sa.DateTime(timezone=True),
+            nullable=True,
+            server_default=sa.text("now()"),
+        ),
         sa.PrimaryKeyConstraint("source"),
     )
 
@@ -51,7 +59,9 @@ def upgrade() -> None:
         sa.Column("event_time", sa.DateTime(timezone=True), nullable=False),
         sa.Column("registration_deadline", sa.DateTime(timezone=True), nullable=False),
         sa.Column("status", sa.String(length=50), nullable=False),
-        sa.Column("number_of_visitors", sa.Integer(), nullable=False, server_default="0"),
+        sa.Column(
+            "number_of_visitors", sa.Integer(), nullable=False, server_default="0"
+        ),
         sa.Column("changed_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("status_changed_at", sa.DateTime(timezone=True), nullable=False),

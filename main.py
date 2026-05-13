@@ -8,7 +8,6 @@ from fastapi import FastAPI
 from api.routes import router as api_router
 from api.sync_service import run_sync_once
 
-
 scheduler = AsyncIOScheduler(timezone=ZoneInfo("Europe/Moscow"))
 
 

@@ -27,33 +27,51 @@ class EventsProviderClient:
         if message:
             raise RuntimeError(f"{message}\n{response_text}")
 
-    def _validate_httpx_response(self, response: httpx.Response, expected_codes: set[int]) -> None:
+    def _validate_httpx_response(
+        self, response: httpx.Response, expected_codes: set[int]
+    ) -> None:
         if response.status_code in expected_codes:
             return
         self._raise_for_known_http_error(response.status_code, response.text)
         try:
             response.raise_for_status()
         except httpx.HTTPStatusError as exc:
-            raise RuntimeError(f"Request failed with status code {response.status_code}\n{response.text}") from exc
-        raise RuntimeError(f"Request failed with status code {response.status_code}\n{response.text}")
+            error_message = (
+                f"Request failed with status code {response.status_code}\n"
+                f"{response.text}"
+            )
+            raise RuntimeError(error_message) from exc
+        error_message = (
+            f"Request failed with status code {response.status_code}\n{response.text}"
+        )
+        raise RuntimeError(error_message)
 
-    def _validate_requests_response(self, response: requests.Response, expected_codes: set[int]) -> None:
+    def _validate_requests_response(
+        self, response: requests.Response, expected_codes: set[int]
+    ) -> None:
         if response.status_code in expected_codes:
             return
         self._raise_for_known_http_error(response.status_code, response.text)
         try:
             response.raise_for_status()
         except requests.HTTPError as exc:
-            raise RuntimeError(f"Request failed with status code {response.status_code}\n{response.text}") from exc
-        raise RuntimeError(f"Request failed with status code {response.status_code}\n{response.text}")
+            error_message = (
+                f"Request failed with status code {response.status_code}\n"
+                f"{response.text}"
+            )
+            raise RuntimeError(error_message) from exc
+        error_message = (
+            f"Request failed with status code {response.status_code}\n{response.text}"
+        )
+        raise RuntimeError(error_message)
 
     async def get_events(
-            self,
-            date_from: str,
+        self,
+        date_from: str,
     ):
-        url = f'{HTTP_EVENTS_PROVIDER_URL}/api/events/'
-        headers = {'x-api-key': PROVIDER_API_TOKEN}
-        params = {'changed_at': date_from}
+        url = f"{HTTP_EVENTS_PROVIDER_URL}/api/events/"
+        headers = {"x-api-key": PROVIDER_API_TOKEN}
+        params = {"changed_at": date_from}
 
         events = []
         async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
@@ -62,39 +80,34 @@ class EventsProviderClient:
                 self._validate_httpx_response(response, expected_codes={200})
 
                 data = response.json()
-                events.extend(data['results'])
+                events.extend(data["results"])
 
-                if data['next'] is None:
+                if data["next"] is None:
                     break
 
-                url = data['next']
+                url = data["next"]
                 params = None
 
         return events
 
-    async def get_event_seats(
-            self,
-            event_id: str
-    ):
-        url = f'{HTTP_EVENTS_PROVIDER_URL}/api/events/{event_id}/seats/'
-        headers = {'x-api-key': PROVIDER_API_TOKEN}
+    async def get_event_seats(self, event_id: str):
+        url = f"{HTTP_EVENTS_PROVIDER_URL}/api/events/{event_id}/seats/"
+        headers = {"x-api-key": PROVIDER_API_TOKEN}
 
         async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
             response = await client.get(url=url, headers=headers)
 
         self._validate_httpx_response(response, expected_codes={200})
 
-        return response.json()['seats']
+        return response.json()["seats"]
 
-    async def register_on_event(
-            self,
-            register_info: RegisterOnEventRequest
-    ):
+    async def register_on_event(self, register_info: RegisterOnEventRequest):
         body = register_info.model_dump()
         event_id = body.pop("event_id")
 
-        url = f'{HTTPS_EVENTS_PROVIDER_URL}/api/events/{event_id}/register/'  # HTTP request Permanently Redirected
-        headers = {'x-api-key': PROVIDER_API_TOKEN}
+        # HTTP request Permanently Redirected when using non-HTTPS provider URL.
+        url = f"{HTTPS_EVENTS_PROVIDER_URL}/api/events/{event_id}/register/"
+        headers = {"x-api-key": PROVIDER_API_TOKEN}
 
         response = requests.post(url=url, headers=headers, json=body)
 

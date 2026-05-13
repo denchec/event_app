@@ -52,4 +52,6 @@ class SyncState(Base):
     sync_status = Column(String(20), nullable=False, default="idle")
     last_error = Column(String(500), nullable=True)
 
-    changed_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    changed_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )

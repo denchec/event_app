@@ -1,12 +1,12 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Path, Body, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.dependencies import get_events_paginated, get_event_details
-from api.models import Event
+from api.dependencies import get_event_details, get_events_paginated
+from api.models import Event, EventTicket
 from api.provider_client import EventsProviderClient
-from api.schemas import GetEventResponse, EventOut, RegisterOnEventRequest
+from api.schemas import EventOut, GetEventResponse, RegisterOnEventRequest
 from api.sync_service import run_sync_once_with_session
 from database import get_db
 
@@ -15,40 +15,31 @@ router = APIRouter()
 
 @router.get("/health")
 async def health_check():
-    return {'status': 'ok'}
+    return {"status": "ok"}
 
 
 @router.post("/sync/trigger")
-async def sync_events(
-        db: AsyncSession = Depends(get_db)
-):
+async def sync_events(db: Annotated[AsyncSession, Depends(get_db)]):
     return await run_sync_once_with_session(db)
 
 
 @router.get("/events", response_model=GetEventResponse)
-async def get_events(
-        events: Event = Depends(get_events_paginated)
-):
+async def get_events(events: Annotated[Event, Depends(get_events_paginated)]):
     return events
 
 
 @router.get("/events/{event_id}", response_model=EventOut)
-async def get_event_by_id(
-        event_details: Event = Depends(get_event_details)
-):
+async def get_event_by_id(event_details: Annotated[Event, Depends(get_event_details)]):
     return event_details
 
 
 @router.get("/events/{event_id}/seats")
 async def get_event_seats(
-        event_id: Annotated[str, Path(title="The ID of the event to get")],
+    event_id: Annotated[str, Path(title="The ID of the event to get")],
 ):
     event_seats = await EventsProviderClient().get_event_seats(event_id)
 
-    return {
-        "event_id": event_id,
-        'available_seats': event_seats
-    }
+    return {"event_id": event_id, "available_seats": event_seats}
 
 
 @router.post("/tickets")

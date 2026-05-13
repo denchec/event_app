@@ -8,3 +8,4 @@ asyncpg==0.31.0
 requests==2.34.0
 httpx==0.28.1
 apscheduler==3.11.2
+ruff==0.15.12

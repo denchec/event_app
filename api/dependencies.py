@@ -1,19 +1,19 @@
 from typing import Annotated
 
-from fastapi import Depends, Request, Path, HTTPException, status
-from sqlalchemy import select, func
+from fastapi import Depends, HTTPException, Path, Request, status
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from api.models import Event
-from api.schemas import GetEventRequest, GetEventResponse, EventOut
+from api.schemas import EventOut, GetEventRequest, GetEventResponse
 from database import get_db
 
 
 async def get_events_paginated(
     request: Request,
     query: Annotated[GetEventRequest, Depends()],
-    db: AsyncSession = Depends(get_db),
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     base_stmt = select(Event).options(selectinload(Event.place))
     if query.date_from is not None:
@@ -32,12 +32,22 @@ async def get_events_paginated(
     has_next = offset + query.page_size < total
 
     previous_url = (
-        str(request.url.include_query_params(page=query.page - 1, page_size=query.page_size))
-        if has_previous else None
+        str(
+            request.url.include_query_params(
+                page=query.page - 1, page_size=query.page_size
+            )
+        )
+        if has_previous
+        else None
     )
     next_url = (
-        str(request.url.include_query_params(page=query.page + 1, page_size=query.page_size))
-        if has_next else None
+        str(
+            request.url.include_query_params(
+                page=query.page + 1, page_size=query.page_size
+            )
+        )
+        if has_next
+        else None
     )
 
     results = [EventOut.model_validate(event) for event in items]
@@ -52,7 +62,7 @@ async def get_events_paginated(
 
 async def get_event_details(
     event_id: Annotated[str, Path(title="The ID of the event to get")],
-    db: AsyncSession = Depends(get_db),
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     stmt = select(Event).options(selectinload(Event.place)).where(Event.id == event_id)
     result = await db.execute(stmt)

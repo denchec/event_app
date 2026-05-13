@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class GetEventRequest(BaseModel):
@@ -37,8 +37,8 @@ class GetEventResponse(BaseModel):
 
 
 class RegisterOnEventRequest(BaseModel):
-    event_id: str
-    first_name: str
-    last_name: str
-    email: str
-    seat: str
+    event_id: str = Field(min_length=1, max_length=36)
+    first_name: str = Field(min_length=1, max_length=100)
+    last_name: str = Field(min_length=1, max_length=100)
+    email: EmailStr
+    seat: str = Field(min_length=1, max_length=20)

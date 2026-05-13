@@ -62,7 +62,7 @@ async def get_event_seats(
     return {"event_id": event_id, "available_seats": event_seats}
 
 
-@router.post("/tickets")
+@router.post("/tickets", status_code=status.HTTP_201_CREATED)
 async def register_on_event(
     register_info: Annotated[RegisterOnEventRequest, Body()],
     db: Annotated[AsyncSession, Depends(get_db)],
@@ -105,4 +105,4 @@ async def delete_ticket(
         await db.delete(ticket)
         await db.commit()
 
-    return response_info
+    return {"success": True}

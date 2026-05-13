@@ -13,6 +13,40 @@ PROVIDER_API_TOKEN = os.getenv("PROVIDER_API_TOKEN")
 
 
 class EventsProviderClient:
+    def _raise_for_known_http_error(self, status_code: int, response_text: str) -> None:
+        errors = {
+            301: "Redirect (301). Проверьте trailing slash в URL.",
+            308: "Permanent Redirect (308). Проверьте trailing slash в URL.",
+            400: "Bad Request (400). Некорректные данные или бизнес-ошибка.",
+            401: "Unauthorized (401). Ошибка аутентификации.",
+            404: "Not Found (404). Ресурс не найден.",
+            429: "Too Many Requests (429). Превышен лимит запросов.",
+            500: "Internal Server Error (500). Внутренняя ошибка сервера.",
+        }
+        message = errors.get(status_code)
+        if message:
+            raise RuntimeError(f"{message}\n{response_text}")
+
+    def _validate_httpx_response(self, response: httpx.Response, expected_codes: set[int]) -> None:
+        if response.status_code in expected_codes:
+            return
+        self._raise_for_known_http_error(response.status_code, response.text)
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            raise RuntimeError(f"Request failed with status code {response.status_code}\n{response.text}") from exc
+        raise RuntimeError(f"Request failed with status code {response.status_code}\n{response.text}")
+
+    def _validate_requests_response(self, response: requests.Response, expected_codes: set[int]) -> None:
+        if response.status_code in expected_codes:
+            return
+        self._raise_for_known_http_error(response.status_code, response.text)
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as exc:
+            raise RuntimeError(f"Request failed with status code {response.status_code}\n{response.text}") from exc
+        raise RuntimeError(f"Request failed with status code {response.status_code}\n{response.text}")
+
     async def get_events(
             self,
             date_from: str,
@@ -25,9 +59,7 @@ class EventsProviderClient:
         async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
             while True:
                 response = await client.get(url=url, headers=headers, params=params)
-
-                if response.status_code != 200:
-                    raise RuntimeError(f"Request failed with status code {response.status_code}\n{response.text}")
+                self._validate_httpx_response(response, expected_codes={200})
 
                 data = response.json()
                 events.extend(data['results'])
@@ -50,8 +82,7 @@ class EventsProviderClient:
         async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
             response = await client.get(url=url, headers=headers)
 
-        if response.status_code != 200:
-            raise RuntimeError(f"Request failed with status code {response.status_code}\n{response.text}")
+        self._validate_httpx_response(response, expected_codes={200})
 
         return response.json()['seats']
 
@@ -67,7 +98,6 @@ class EventsProviderClient:
 
         response = requests.post(url=url, headers=headers, json=body)
 
-        if response.status_code not in [200, 201]:
-            raise RuntimeError(f"Request failed with status code {response.status_code}\n{response.text}")
+        self._validate_requests_response(response, expected_codes={200, 201})
 
         return response.json()

@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Path, Body
+from fastapi import APIRouter, Depends, Path, Body, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.dependencies import get_events_paginated, get_event_details
@@ -55,4 +55,11 @@ async def get_event_seats(
 async def register_on_event(
        register_info : Annotated[RegisterOnEventRequest, Body()],
 ):
+    event_seats = await EventsProviderClient().get_event_seats(register_info.event_id)
+    if register_info.seat not in event_seats:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The seat is already taken",
+        )
+
     return await EventsProviderClient().register_on_event(register_info)

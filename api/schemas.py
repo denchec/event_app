@@ -15,6 +15,7 @@ class PlaceOut(BaseModel):
     name: str
     city: str
     address: str
+    seats_pattern: str
 
 
 class EventOut(BaseModel):

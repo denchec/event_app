@@ -1,3 +1,4 @@
+from datetime import datetime, timezone, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, status
@@ -11,6 +12,9 @@ from api.sync_service import run_sync_once_with_session
 from database import get_db
 
 router = APIRouter()
+
+SEATS_CACHE_TTL_SECONDS = 30
+seats_cache: dict[str, dict[str, object]] = {}
 
 
 @router.get("/health")
@@ -37,7 +41,23 @@ async def get_event_by_id(event_details: Annotated[Event, Depends(get_event_deta
 async def get_event_seats(
     event_id: Annotated[str, Path(title="The ID of the event to get")],
 ):
+    now = datetime.now(timezone.utc)
+    cached = seats_cache.get(event_id)
+
+    if cached is not None:
+        expires_at = cached["expires_at"]
+        if isinstance(expires_at, datetime) and now < expires_at:
+            return {
+                "event_id": event_id,
+                "available_seats": cached["seats"],
+            }
+
     event_seats = await EventsProviderClient().get_event_seats(event_id)
+
+    seats_cache[event_id] = {
+        "expires_at": now + timedelta(seconds=SEATS_CACHE_TTL_SECONDS),
+        "seats": event_seats,
+    }
 
     return {"event_id": event_id, "available_seats": event_seats}
 

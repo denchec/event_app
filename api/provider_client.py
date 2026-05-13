@@ -1,5 +1,6 @@
 import os
 
+import httpx
 import requests
 from dotenv import load_dotenv
 
@@ -21,19 +22,21 @@ class EventsProviderClient:
         params = {'changed_at': date_from}
 
         events = []
-        while True:
-            response = requests.get(url=url, headers=headers, params=params)
+        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+            while True:
+                response = await client.get(url=url, headers=headers, params=params)
 
-            if response.status_code != 200:
-                raise RuntimeError(f"Request failed with status code {response.status_code}\n{response.text}")
+                if response.status_code != 200:
+                    raise RuntimeError(f"Request failed with status code {response.status_code}\n{response.text}")
 
-            data = response.json()
-            events.extend(data['results'])
+                data = response.json()
+                events.extend(data['results'])
 
-            if data['next'] is None:
-                break
+                if data['next'] is None:
+                    break
 
-            url = data['next']
+                url = data['next']
+                params = None
 
         return events
 
@@ -44,7 +47,8 @@ class EventsProviderClient:
         url = f'{HTTP_EVENTS_PROVIDER_URL}/api/events/{event_id}/seats/'
         headers = {'x-api-key': PROVIDER_API_TOKEN}
 
-        response = requests.get(url=url, headers=headers)
+        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+            response = await client.get(url=url, headers=headers)
 
         if response.status_code != 200:
             raise RuntimeError(f"Request failed with status code {response.status_code}\n{response.text}")
@@ -61,7 +65,7 @@ class EventsProviderClient:
         url = f'{HTTPS_EVENTS_PROVIDER_URL}/api/events/{event_id}/register/'  # HTTP request Permanently Redirected
         headers = {'x-api-key': PROVIDER_API_TOKEN}
 
-        response = requests.post(url=url, headers=headers, json=body, allow_redirects=False)
+        response = requests.post(url=url, headers=headers, json=body)
 
         if response.status_code not in [200, 201]:
             raise RuntimeError(f"Request failed with status code {response.status_code}\n{response.text}")

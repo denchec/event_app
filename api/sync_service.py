@@ -1,4 +1,6 @@
 from datetime import datetime, timezone
+import logging
+import time
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,9 +11,12 @@ from database import SessionLocal
 
 SYNC_SOURCE = "events_provider"
 FIRST_SYNC_CHANGED_AT = "2000-01-01"
+logger = logging.getLogger(__name__)
 
 
 async def _run_sync(db: AsyncSession) -> dict:
+    started_at = datetime.now(timezone.utc)
+    started_perf = time.perf_counter()
     sync_state = await db.get(SyncState, SYNC_SOURCE)
     if sync_state is None:
         sync_state = SyncState(source=SYNC_SOURCE, sync_status="idle")
@@ -19,6 +24,10 @@ async def _run_sync(db: AsyncSession) -> dict:
         await db.flush()
 
     if sync_state.sync_status == "running":
+        logger.info(
+            "Sync skipped: previous run is still in progress",
+            extra={"source": SYNC_SOURCE},
+        )
         return {
             "sync_status": "running",
             "last_sync_time": sync_state.last_sync_time,
@@ -33,9 +42,12 @@ async def _run_sync(db: AsyncSession) -> dict:
     )
 
     sync_state.sync_status = "running"
-    sync_state.last_sync_time = datetime.now(timezone.utc)
     sync_state.last_error = None
     await db.commit()
+    logger.info(
+        "Sync started",
+        extra={"source": SYNC_SOURCE, "date_from": date_from},
+    )
 
     try:
         events = await EventsProviderClient().get_events(date_from)
@@ -75,9 +87,20 @@ async def _run_sync(db: AsyncSession) -> dict:
                 max_changed_at = event.changed_at
 
         sync_state.sync_status = "success"
+        sync_state.last_sync_time = datetime.now(timezone.utc)
         sync_state.last_changed_at = max_changed_at
         sync_state.last_error = None
         await db.commit()
+        duration_ms = int((time.perf_counter() - started_perf) * 1000)
+        logger.info(
+            "Sync finished successfully",
+            extra={
+                "source": SYNC_SOURCE,
+                "processed_events": len(events),
+                "date_from": date_from,
+                "duration_ms": duration_ms,
+            },
+        )
 
         return {
             "sync_status": sync_state.sync_status,
@@ -99,6 +122,16 @@ async def _run_sync(db: AsyncSession) -> dict:
         failed_state.last_sync_time = datetime.now(timezone.utc)
         failed_state.last_error = str(exc)[:500]
         await db.commit()
+        duration_ms = int((time.perf_counter() - started_perf) * 1000)
+        logger.exception(
+            "Sync failed",
+            extra={
+                "source": SYNC_SOURCE,
+                "date_from": date_from,
+                "started_at": started_at.isoformat(),
+                "duration_ms": duration_ms,
+            },
+        )
         raise
 
 

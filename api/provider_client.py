@@ -8,7 +8,7 @@ from api.schemas import RegisterOnEventRequest
 load_dotenv()
 HTTP_EVENTS_PROVIDER_URL = os.getenv("HTTP_EVENTS_PROVIDER_URL")
 HTTPS_EVENTS_PROVIDER_URL = os.getenv("HTTPS_EVENTS_PROVIDER_URL")
-EVENTS_PROVIDER_BASE_URL = os.getenv("EVENTS_PROVIDER_BASE_URL")
+PROVIDER_API_TOKEN = os.getenv("PROVIDER_API_TOKEN")
 
 
 class EventsProviderClient:
@@ -16,8 +16,8 @@ class EventsProviderClient:
             self,
             date_from: str,
     ):
-        url = f'{EVENTS_PROVIDER_BASE_URL}/api/events/'
-        headers = {'x-api-key': HTTP_EVENTS_PROVIDER_URL}
+        url = f'{HTTP_EVENTS_PROVIDER_URL}/api/events/'
+        headers = {'x-api-key': PROVIDER_API_TOKEN}
         params = {'changed_at': date_from}
 
         events = []
@@ -41,8 +41,8 @@ class EventsProviderClient:
             self,
             event_id: str
     ):
-        url = f'{EVENTS_PROVIDER_BASE_URL}/api/events/{event_id}/seats/'
-        headers = {'x-api-key': HTTP_EVENTS_PROVIDER_URL}
+        url = f'{HTTP_EVENTS_PROVIDER_URL}/api/events/{event_id}/seats/'
+        headers = {'x-api-key': PROVIDER_API_TOKEN}
 
         response = requests.get(url=url, headers=headers)
 
@@ -59,7 +59,7 @@ class EventsProviderClient:
         event_id = body.pop("event_id")
 
         url = f'{HTTPS_EVENTS_PROVIDER_URL}/api/events/{event_id}/register/'  # HTTP request Permanently Redirected
-        headers = {'x-api-key': HTTP_EVENTS_PROVIDER_URL}
+        headers = {'x-api-key': PROVIDER_API_TOKEN}
 
         response = requests.post(url=url, headers=headers, json=body, allow_redirects=False)
 

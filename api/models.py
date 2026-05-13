@@ -36,6 +36,13 @@ class Event(Base):
     place = relationship("Place", back_populates="events")
 
 
+class EventTicket(Base):
+    __tablename__ = "event_tickets"
+
+    id = Column(String(36), primary_key=True)
+    event_id = Column(String(36), nullable=False)
+
+
 class SyncState(Base):
     __tablename__ = "sync_state"
 

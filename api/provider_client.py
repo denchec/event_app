@@ -100,4 +100,16 @@ class EventsProviderClient:
 
         self._validate_requests_response(response, expected_codes={200, 201})
 
+        return response.json()["ticket_id"]
+
+    async def delete_ticket(self, event_id: str, ticket_id: str):
+        # HTTP request Permanently Redirected when using non-HTTPS provider URL.
+        url = f"{HTTPS_EVENTS_PROVIDER_URL}/api/events/{event_id}/unregister/"
+        headers = {"x-api-key": PROVIDER_API_TOKEN}
+        body = {"ticket_id": ticket_id}
+
+        response = requests.delete(url=url, headers=headers, json=body)
+
+        self._validate_requests_response(response, expected_codes={200, 201})
+
         return response.json()

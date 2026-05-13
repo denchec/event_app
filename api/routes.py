@@ -53,7 +53,8 @@ async def get_event_seats(
 
 @router.post("/tickets")
 async def register_on_event(
-       register_info : Annotated[RegisterOnEventRequest, Body()],
+    register_info: Annotated[RegisterOnEventRequest, Body()],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     event_seats = await EventsProviderClient().get_event_seats(register_info.event_id)
     if register_info.seat not in event_seats:
@@ -62,4 +63,35 @@ async def register_on_event(
             detail="The seat is already taken",
         )
 
-    return await EventsProviderClient().register_on_event(register_info)
+    ticket_id = await EventsProviderClient().register_on_event(register_info)
+
+    ticket = await db.get(EventTicket, ticket_id)
+    if ticket is None:
+        ticket = EventTicket(id=ticket_id, event_id=register_info.event_id)
+        db.add(ticket)
+        await db.commit()
+
+    return {"ticket_id": ticket_id}
+
+
+@router.delete("/tickets/{ticket_id}")
+async def delete_ticket(
+    ticket_id: Annotated[str, Path(title="The ID of the event to get")],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    ticket = await db.get(EventTicket, ticket_id)
+    if ticket is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="There is no registration for this ticket",
+        )
+
+    response_info = await EventsProviderClient().delete_ticket(
+        ticket.event_id, ticket_id
+    )
+
+    if response_info:
+        await db.delete(ticket)
+        await db.commit()
+
+    return response_info

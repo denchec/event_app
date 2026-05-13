@@ -1,12 +1,12 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Path
+from fastapi import APIRouter, Depends, Path, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.dependencies import get_events_paginated, get_event_details
 from api.models import Event
 from api.provider_client import EventsProviderClient
-from api.schemas import GetEventResponse, EventOut
+from api.schemas import GetEventResponse, EventOut, RegisterOnEventRequest
 from api.sync_service import run_sync_once_with_session
 from database import get_db
 
@@ -49,3 +49,10 @@ async def get_event_seats(
         "event_id": event_id,
         'available_seats': event_seats
     }
+
+
+@router.post("/tickets")
+async def register_on_event(
+       register_info : Annotated[RegisterOnEventRequest, Body()],
+):
+    return await EventsProviderClient().register_on_event(register_info)

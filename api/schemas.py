@@ -32,3 +32,11 @@ class GetEventResponse(BaseModel):
     next: str | None
     previous: str | None
     results: list[EventOut]
+
+
+class RegisterOnEventRequest(BaseModel):
+    event_id: str
+    first_name: str
+    last_name: str
+    email: str
+    seat: str

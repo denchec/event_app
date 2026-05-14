@@ -117,8 +117,9 @@ class EventsProviderClient:
         body = register_info.model_dump()
         event_id = body.pop("event_id")
 
-        # HTTP request Permanently Redirected, so we use HTTPS
-        url = f"{HTTPS_EVENTS_PROVIDER_URL}/api/events/{event_id}/register/"
+        # With DEV EVENTS_PROVIDER_URL - HTTP request Permanently Redirected.
+        # In DEV change EVENTS_PROVIDER_URL on HTTPS
+        url = f"{HTTP_EVENTS_PROVIDER_URL}/api/events/{event_id}/register/"
         headers = {"x-api-key": PROVIDER_API_TOKEN}
 
         response = requests.post(url=url, headers=headers, json=body)
@@ -128,8 +129,9 @@ class EventsProviderClient:
         return response.json()["ticket_id"]
 
     async def delete_ticket(self, event_id: str, ticket_id: str):
-        # HTTP request Permanently Redirected when using non-HTTPS provider URL.
-        url = f"{HTTPS_EVENTS_PROVIDER_URL}/api/events/{event_id}/unregister/"
+        # With DEV EVENTS_PROVIDER_URL - HTTP request Permanently Redirected.
+        # In DEV change EVENTS_PROVIDER_URL on HTTPS
+        url = f"{HTTP_EVENTS_PROVIDER_URL}/api/events/{event_id}/unregister/"
         headers = {"x-api-key": PROVIDER_API_TOKEN}
         body = {"ticket_id": ticket_id}
 

@@ -67,6 +67,10 @@ async def register_on_event(
     register_info: Annotated[RegisterOnEventRequest, Body()],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
+    email = register_info.email
+    if not isinstance(email, str) or "@" not in email:
+        raise HTTPException(status_code=400, detail="Invalid email")
+
     event_seats = await EventsProviderClient().get_event_seats(register_info.event_id)
     if register_info.seat not in event_seats:
         raise HTTPException(

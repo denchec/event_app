@@ -12,3 +12,9 @@ python -m uv sync --dev
 ```powershell
 python -m uv run uvicorn main:app --reload
 ```
+
+## Docker
+
+```powershell
+docker compose up -d --build
+```

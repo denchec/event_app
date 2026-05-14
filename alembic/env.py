@@ -16,7 +16,23 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 load_dotenv()
-database_url = os.getenv("DATABASE_URL")
+
+
+def _resolve_database_url() -> str | None:
+    database_url = os.getenv("DATABASE_URL") or os.getenv("POSTGRES_CONNECTION_STRING")
+    if not database_url:
+        return None
+
+    if database_url.startswith("postgres://"):
+        return "postgresql+asyncpg://" + database_url[len("postgres://"):]
+
+    if database_url.startswith("postgresql://"):
+        return "postgresql+asyncpg://" + database_url[len("postgresql://"):]
+
+    return database_url
+
+
+database_url = _resolve_database_url()
 if database_url:
     config.set_main_option("sqlalchemy.url", database_url)
 

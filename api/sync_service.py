@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 import logging
 import time
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.events_paginator import EventsPaginator
@@ -22,7 +23,13 @@ async def _run_sync(db: AsyncSession) -> dict:
     if sync_state is None:
         sync_state = SyncState(source=SYNC_SOURCE, sync_status="idle")
         db.add(sync_state)
-        await db.flush()
+        try:
+            await db.flush()
+        except IntegrityError:
+            await db.rollback()
+            sync_state = await db.get(SyncState, SYNC_SOURCE)
+            if sync_state is None:
+                raise
 
     if sync_state.sync_status == "running":
         logger.info(
@@ -119,6 +126,13 @@ async def _run_sync(db: AsyncSession) -> dict:
         if failed_state is None:
             failed_state = SyncState(source=SYNC_SOURCE, sync_status="failed")
             db.add(failed_state)
+            try:
+                await db.flush()
+            except IntegrityError:
+                await db.rollback()
+                failed_state = await db.get(SyncState, SYNC_SOURCE)
+                if failed_state is None:
+                    raise
 
         failed_state.sync_status = "failed"
         failed_state.last_sync_time = datetime.now(timezone.utc)

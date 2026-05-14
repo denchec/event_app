@@ -24,10 +24,10 @@ def _resolve_database_url() -> str | None:
         return None
 
     if database_url.startswith("postgres://"):
-        return "postgresql+asyncpg://" + database_url[len("postgres://"):]
+        return "postgresql+asyncpg://" + database_url[len("postgres://") :]
 
     if database_url.startswith("postgresql://"):
-        return "postgresql+asyncpg://" + database_url[len("postgresql://"):]
+        return "postgresql+asyncpg://" + database_url[len("postgresql://") :]
 
     return database_url
 

@@ -17,10 +17,10 @@ def _resolve_database_url() -> str:
         raise RuntimeError("DATABASE_URL (or POSTGRES_CONNECTION_STRING) is not set")
 
     if database_url.startswith("postgres://"):
-        return "postgresql+asyncpg://" + database_url[len("postgres://"):]
+        return "postgresql+asyncpg://" + database_url[len("postgres://") :]
 
     if database_url.startswith("postgresql://"):
-        return "postgresql+asyncpg://" + database_url[len("postgresql://"):]
+        return "postgresql+asyncpg://" + database_url[len("postgresql://") :]
 
     return database_url
 

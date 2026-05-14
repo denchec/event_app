@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import AsyncMock
+
+import pytest
 
 from api.events_paginator import EventsPaginator
 
@@ -31,9 +32,7 @@ async def test_events_paginator_yields_events_from_all_pages():
 @pytest.mark.asyncio
 async def test_events_paginator_finishes_on_empty_first_page():
     mock_client = AsyncMock()
-    mock_client.get_events_page = AsyncMock(
-        return_value={"results": [], "next": None}
-    )
+    mock_client.get_events_page = AsyncMock(return_value={"results": [], "next": None})
 
     events = []
     async for event in EventsPaginator(mock_client, "2026-01-01"):

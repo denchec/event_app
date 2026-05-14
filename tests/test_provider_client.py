@@ -1,7 +1,8 @@
+from unittest.mock import AsyncMock, Mock, patch
+
 import httpx
 import pytest
 import requests
-from unittest.mock import AsyncMock, Mock, patch
 
 from api.provider_client import EventsProviderClient
 from api.schemas import RegisterOnEventRequest

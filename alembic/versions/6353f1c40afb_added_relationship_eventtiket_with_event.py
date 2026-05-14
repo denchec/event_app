@@ -39,6 +39,9 @@ def downgrade() -> None:
             op.add_column(
                 "event_tickets",
                 sa.Column(
-                    "event_id", sa.VARCHAR(length=36), autoincrement=False, nullable=False
+                    "event_id",
+                    sa.VARCHAR(length=36),
+                    autoincrement=False,
+                    nullable=False,
                 ),
             )

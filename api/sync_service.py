@@ -1,6 +1,6 @@
-from datetime import datetime, timezone
 import logging
 import time
+from datetime import datetime, timezone
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession

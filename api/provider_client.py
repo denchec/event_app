@@ -3,6 +3,7 @@ import os
 import httpx
 import requests
 from dotenv import load_dotenv
+from fastapi import HTTPException
 
 from api.schemas import RegisterOnEventRequest
 
@@ -25,7 +26,7 @@ class EventsProviderClient:
         }
         message = errors.get(status_code)
         if message:
-            raise RuntimeError(f"{message}\n{response_text}")
+            raise HTTPException(status_code=status_code, detail=message)
 
     def _validate_httpx_response(
         self, response: httpx.Response, expected_codes: set[int]

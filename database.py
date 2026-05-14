@@ -10,7 +10,15 @@ from sqlalchemy.orm import declarative_base
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("POSTGRES_CONNECTION_STRING")
+POSTGRES_DATABASE_NAME = os.getenv("POSTGRES_DATABASE_NAME")
+POSTGRES_HOST = os.getenv("POSTGRES_HOST")
+POSTGRES_PORT = os.getenv("POSTGRES_PORT")
+POSTGRES_USERNAME = os.getenv("POSTGRES_USERNAME")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+
+DATABASE_URL = (f"postgresql+asyncpg://{POSTGRES_USERNAME}:"
+                f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:"
+                f"{POSTGRES_PORT}/{POSTGRES_DATABASE_NAME}")
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL is not set")
 

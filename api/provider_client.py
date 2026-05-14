@@ -65,28 +65,40 @@ class EventsProviderClient:
         )
         raise RuntimeError(error_message)
 
+    async def get_events_page(
+        self,
+        date_from: str | None = None,
+        next_page_url: str | None = None,
+    ) -> dict:
+        url = f"{HTTP_EVENTS_PROVIDER_URL}/api/events/"
+        headers = {"x-api-key": PROVIDER_API_TOKEN}
+        params = {"changed_at": date_from} if date_from is not None else None
+        if next_page_url is not None:
+            url = next_page_url
+            params = None
+
+        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+            response = await client.get(url=url, headers=headers, params=params)
+
+        self._validate_httpx_response(response, expected_codes={200})
+        return response.json()
+
     async def get_events(
         self,
         date_from: str,
     ):
-        url = f"{HTTP_EVENTS_PROVIDER_URL}/api/events/"
-        headers = {"x-api-key": PROVIDER_API_TOKEN}
-        params = {"changed_at": date_from}
-
         events = []
-        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
-            while True:
-                response = await client.get(url=url, headers=headers, params=params)
-                self._validate_httpx_response(response, expected_codes={200})
+        next_page_url = None
+        first_page = True
 
-                data = response.json()
-                events.extend(data["results"])
-
-                if data["next"] is None:
-                    break
-
-                url = data["next"]
-                params = None
+        while first_page or next_page_url is not None:
+            data = await self.get_events_page(
+                date_from=date_from if first_page else None,
+                next_page_url=next_page_url,
+            )
+            events.extend(data["results"])
+            next_page_url = data["next"]
+            first_page = False
 
         return events
 
@@ -105,7 +117,7 @@ class EventsProviderClient:
         body = register_info.model_dump()
         event_id = body.pop("event_id")
 
-        # HTTP request Permanently Redirected when using non-HTTPS provider URL.
+        # HTTP request Permanently Redirected, so we use HTTPS
         url = f"{HTTPS_EVENTS_PROVIDER_URL}/api/events/{event_id}/register/"
         headers = {"x-api-key": PROVIDER_API_TOKEN}
 

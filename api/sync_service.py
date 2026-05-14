@@ -4,6 +4,7 @@ import time
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.events_paginator import EventsPaginator
 from api.models import Event, Place, SyncState
 from api.provider_client import EventsProviderClient
 from api.utils import _parse_dt
@@ -50,10 +51,10 @@ async def _run_sync(db: AsyncSession) -> dict:
     )
 
     try:
-        events = await EventsProviderClient().get_events(date_from)
+        processed_events = 0
         max_changed_at = sync_state.last_changed_at
 
-        for event_data in events:
+        async for event_data in EventsPaginator(EventsProviderClient(), date_from):
             place_data = event_data["place"]
 
             place = await db.get(Place, place_data["id"])
@@ -85,6 +86,7 @@ async def _run_sync(db: AsyncSession) -> dict:
 
             if max_changed_at is None or event.changed_at > max_changed_at:
                 max_changed_at = event.changed_at
+            processed_events += 1
 
         sync_state.sync_status = "success"
         sync_state.last_sync_time = datetime.now(timezone.utc)
@@ -96,7 +98,7 @@ async def _run_sync(db: AsyncSession) -> dict:
             "Sync finished successfully",
             extra={
                 "source": SYNC_SOURCE,
-                "processed_events": len(events),
+                "processed_events": processed_events,
                 "date_from": date_from,
                 "duration_ms": duration_ms,
             },
@@ -106,7 +108,7 @@ async def _run_sync(db: AsyncSession) -> dict:
             "sync_status": sync_state.sync_status,
             "last_sync_time": sync_state.last_sync_time,
             "last_changed_at": sync_state.last_changed_at,
-            "processed_events": len(events),
+            "processed_events": processed_events,
             "date_from": date_from,
             "skipped": False,
         }
